@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛢 Oil Market Dashboard</title>
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#2d333b;
+  --bd:rgba(255,255,255,0.08);--bd2:rgba(255,255,255,0.18);
+  --tx:#e6edf3;--tx2:#8b949e;--tx3:#6e7681;
+  --blue:#388bfd;--blue-bg:rgba(56,139,253,0.12);
+  --green:#3fb950;--green-bg:rgba(63,185,80,0.1);
+  --red:#f85149;--red-bg:rgba(248,81,73,0.1);
+  --amber:#d29922;--amber-bg:rgba(210,153,34,0.12);
+  --r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+
+.hdr{background:var(--bg2);border-bottom:1px solid var(--bd);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.logo{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.lang-row{display:flex;gap:4px}
+.lb{padding:3px 9px;border-radius:6px;border:1px solid var(--bd);background:transparent;cursor:pointer;font-size:11px;color:var(--tx2);transition:all .15s}
+.lb:hover,.lb.on{background:var(--bg3);color:var(--tx);border-color:var(--bd2);font-weight:600}
+.hdr-r{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx3)}
+.spin{display:none;width:10px;height:10px;border:1.5px solid var(--bd2);border-top-color:var(--tx2);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.rbtn{padding:3px 10px;border:1px solid var(--bd);border-radius:6px;background:transparent;color:var(--tx2);cursor:pointer;font-size:12px;transition:all .15s}
+.rbtn:hover{background:var(--bg3);color:var(--tx)}
+
+.main{max-width:1440px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:20px}
+.slbl{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+
+/* API box */
+.api-box{background:var(--amber-bg);border:1px solid rgba(210,153,34,.3);border-radius:var(--rl);padding:14px 16px;display:flex;gap:10px;align-items:flex-start}
+.api-txt{font-size:13px;color:var(--amber);flex:1}
+.api-txt a{color:var(--blue);text-decoration:none}.api-txt a:hover{text-decoration:underline}
+.api-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.api-in{flex:1;min-width:180px;padding:6px 10px;border:1px solid var(--bd2);border-radius:6px;background:var(--bg3);color:var(--tx);font-size:12px;outline:none}
+.api-in:focus{border-color:var(--blue)}
+.abtn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--bd)}
+.abtn-p{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}.abtn-p:hover{background:var(--blue);color:#fff}
+.abtn-s{background:transparent;color:var(--tx2)}.abtn-s:hover{background:var(--bg3);color:var(--tx)}
+.api-msg{font-size:11px;margin-top:6px;padding:5px 8px;border-radius:5px;display:none}
+.api-ok{background:var(--green-bg);color:var(--green)}
+.api-err{background:var(--red-bg);color:var(--red)}
+.live-chip{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--green-bg);color:var(--green);font-weight:700;display:none;animation:pulse 3s infinite}
+
+/* price cards */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px}
+.pc{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:13px 15px;transition:border-color .15s;position:relative;overflow:hidden}
+.pc.live-glow{border-color:rgba(63,185,80,.5)}
+.pc-live-dot{position:absolute;top:10px;right:10px;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;display:none}
+.pcl{font-size:11px;color:var(--tx3);margin-bottom:3px;font-weight:600}
+.pcv{font-size:22px;font-weight:700;color:var(--tx);letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.pcu{font-size:10px;color:var(--tx3)}
+.pcc{font-size:12px;margin-top:4px;font-weight:600}
+.up{color:var(--green)}.dn{color:var(--red)}
+.spark-wrap{margin-top:8px;height:28px;position:relative}
+.spark-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:28px!important}
+
+/* two col */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.row2{grid-template-columns:1fr}}
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:15px 18px}
+.ctitle{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.srow:last-child{border-bottom:none}
+.sl{color:var(--tx2)}.sv{font-weight:600;color:var(--tx)}
+.badge{font-size:11px;padding:2px 8px;border-radius:5px;font-weight:700}
+.bb{background:var(--blue-bg);color:var(--blue)}
+.ba{background:var(--amber-bg);color:var(--amber)}
+.bg2c{background:var(--green-bg);color:var(--green)}
+
+/* EIA */
+.eia-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.eia-lbl{width:120px;font-size:11px;color:var(--tx2);flex-shrink:0}
+.eia-bw{flex:1;background:var(--bg3);border-radius:3px;height:9px;overflow:hidden}
+.eia-b{height:100%;border-radius:3px;transition:width .6s}
+.eia-val{width:80px;text-align:right;font-size:11px;font-weight:700;color:var(--tx);flex-shrink:0}
+.eia-chg{font-size:10px;margin-left:2px}
+
+/* futures */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:10px}
+.fc{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px}
+.fc.spot{border-color:var(--blue)}
+.fm{font-size:10px;color:var(--tx3);margin-bottom:3px;font-weight:600}
+.fv{font-size:15px;font-weight:700;color:var(--tx)}
+.fd{font-size:10px;color:var(--tx3);margin-top:2px}
+.fut-chart-wrap{position:relative;height:120px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:10px}
+
+/* map */
+.map-layout{display:grid;grid-template-columns:1fr 300px;gap:14px}
+@media(max-width:900px){.map-layout{grid-template-columns:1fr}}
+.map-wrap{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;position:relative}
+.rtabs{display:flex;gap:5px;flex-wrap:wrap;padding:10px 12px 8px}
+.rt{padding:3px 9px;border-radius:6px;border:1px solid var(--bd);background:transparent;font-size:11px;cursor:pointer;color:var(--tx2);transition:all .15s}
+.rt.on,.rt:hover{background:var(--bg3);color:var(--tx);border-color:var(--bd2);font-weight:600}
+#world-svg{width:100%;display:block;cursor:default}
+.map-tt{position:absolute;background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--r);padding:10px 14px;font-size:12px;pointer-events:none;display:none;max-width:200px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.tt-name{font-weight:700;color:var(--tx);margin-bottom:5px;font-size:13px}
+.tt-row{color:var(--tx2);margin-top:2px}
+.prod-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:14px}
+.prod-row{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.pflag{width:20px;text-align:center;font-size:13px;flex-shrink:0}
+.pname{width:108px;font-size:11px;color:var(--tx2);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbw{flex:1;background:var(--bg3);border-radius:3px;height:7px;overflow:hidden}
+.pb{height:100%;border-radius:3px;transition:width .4s}
+.pv{width:36px;text-align:right;font-size:11px;font-weight:700;color:var(--tx);flex-shrink:0}
+
+/* detail */
+.det{background:var(--bg2);border:1px solid var(--blue);border-radius:var(--rl);padding:16px;display:none;margin-top:12px}
+.det-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.det-nm{font-size:15px;font-weight:700;color:var(--tx)}
+.det-x{cursor:pointer;color:var(--tx3);font-size:20px;line-height:1}.det-x:hover{color:var(--tx)}
+.det-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.ds{background:var(--bg3);border-radius:var(--r);padding:10px 12px}
+.dsl{font-size:10px;color:var(--tx3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.dsv{font-size:15px;font-weight:700;color:var(--tx)}
+
+/* routes */
+.routes-wrap{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden}
+.routes-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px}
+.routes-sub{font-size:12px;color:var(--tx2);max-width:460px}
+.routes-tabs{display:flex;gap:5px}
+.routes-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.rc{padding:12px 16px;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);cursor:pointer;transition:background .15s}
+.rc:hover{background:var(--bg3)}
+.rc.sel{background:var(--blue-bg);border-left:3px solid var(--blue)}
+.rc-from{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.rc-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:4px}
+.rc-vol{font-size:22px;font-weight:700;color:var(--blue)}
+.rc-unit{font-size:10px;color:var(--tx3)}
+.rc-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.tag-s{background:var(--red-bg);color:var(--red)}
+.tag-p{background:var(--blue-bg);color:var(--blue)}
+.tag-t{background:var(--amber-bg);color:var(--amber)}
+.route-map-wrap{position:relative;height:240px;background:var(--bg);overflow:hidden}
+#route-canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+
+/* news */
+.news-wrap{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden}
+.news-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--bd)}
+.news-ttl{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em}
+.nref{padding:3px 10px;border:1px solid var(--bd);border-radius:6px;background:transparent;color:var(--tx2);cursor:pointer;font-size:11px;transition:all .15s}
+.nref:hover{background:var(--bg3);color:var(--tx)}
+.ni{padding:13px 16px;border-bottom:1px solid var(--bd);display:flex;gap:12px;transition:background .15s;cursor:default}
+.ni:last-child{border-bottom:none}
+.ni:hover{background:var(--bg3)}
+.ni-ico{font-size:22px;flex-shrink:0;line-height:1.3}
+.ni-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.ni-src{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase}
+.ni-time{font-size:10px;color:var(--tx3)}
+.ni-imp{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:700}
+.i-bull{background:var(--green-bg);color:var(--green)}
+.i-bear{background:var(--red-bg);color:var(--red)}
+.i-neu{background:var(--bg3);color:var(--tx2)}
+.ni-head{font-size:13px;font-weight:600;color:var(--tx);line-height:1.4;margin-bottom:3px}
+.ni-body{font-size:12px;color:var(--tx2);line-height:1.45}
+.news-load{padding:24px;text-align:center;color:var(--tx3);font-size:13px}
+
+/* derivs */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+
+footer{text-align:center;padding:18px;font-size:11px;color:var(--tx3);border-top:1px solid var(--bd);margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="logo"><div class="dot"></div>🛢 Oil Dashboard <span class="live-chip" id="live-chip">LIVE</span></div>
+    <div class="lang-row">
+      <button class="lb on" onclick="setL('ru')">RU</button>
+      <button class="lb" onclick="setL('en')">EN</button>
+      <button class="lb" onclick="setL('zh')">中文</button>
+      <button class="lb" onclick="setL('ar')">AR</button>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <span class="spin" id="spin"></span>
+    <span id="upd-txt">—</span>
+    <button class="rbtn" onclick="loadAll()">↻</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- API -->
+<div class="api-box" id="api-box">
+  <div>⚡</div>
+  <div style="flex:1">
+    <div class="api-txt">Для <b>живых цен</b> — введите бесплатный API-ключ от <a href="https://oilpriceapi.com" target="_blank">oilpriceapi.com</a> (7 дней бесплатно, без карты). Без ключа — демо с симуляцией тиков.
+    </div>
+    <div class="api-row">
+      <input class="api-in" id="api-in" type="password" placeholder="Вставьте API-ключ...">
+      <button class="abtn abtn-p" onclick="connectApi()">Подключить</button>
+      <button class="abtn abtn-s" onclick="skipApi()">Демо-режим</button>
+    </div>
+    <div class="api-msg" id="api-msg"></div>
+  </div>
+</div>
+
+<!-- BENCHMARKS -->
+<div>
+  <div class="slbl" id="lbl-bm">Эталонные марки нефти</div>
+  <div class="pgrid" id="pgrid"></div>
+</div>
+
+<!-- SPREAD + EIA -->
+<div class="row2">
+  <div class="card">
+    <div class="ctitle" id="lbl-spread">Спред и индикаторы</div>
+    <div class="srow"><span class="sl">Brent–WTI спред</span><span class="sv" id="bw-s">—</span></div>
+    <div class="srow"><span class="sl">Brent–Urals дисконт</span><span class="sv" id="bu-s">—</span></div>
+    <div class="srow"><span class="sl">Crack spread 3-2-1</span><span class="sv" id="crack-s">—</span></div>
+    <div class="srow"><span class="sl">DXY (USD Index)</span><span class="sv">103.2 <small style="color:var(--tx3);font-size:10px">↔ инверс.</small></span></div>
+    <div class="srow"><span class="sl">Nat.Gas (Henry Hub)</span><span class="sv" id="ng-v">$2.74 /MMBtu</span></div>
+    <div class="srow"><span class="sl">Heating Oil</span><span class="sv" id="ho-v">$2.48 /gal</span></div>
+  </div>
+  <div class="card">
+    <div class="ctitle" id="lbl-eia">Запасы нефти США — EIA (млн барр)</div>
+    <div id="eia-bars"></div>
+  </div>
+</div>
+
+<!-- FUTURES -->
+<div>
+  <div class="slbl" id="lbl-fut">Фьючерсная кривая Brent</div>
+  <div class="fgrid" id="fgrid"></div>
+  <div class="fut-chart-wrap"><canvas id="fut-c" aria-label="Фьючерсная кривая"></canvas></div>
+</div>
+
+<!-- MAP -->
+<div>
+  <div class="slbl" id="lbl-prod">Добыча по странам</div>
+  <div class="map-layout">
+    <div>
+      <div class="map-wrap">
+        <div class="rtabs" id="rtabs"></div>
+        <div class="map-tt" id="mtt"></div>
+        <canvas id="world-svg" height="400" aria-label="Карта добычи нефти"></canvas>
+      </div>
+    </div>
+    <div class="prod-card">
+      <div class="ctitle" id="lbl-top10">Топ-10 производителей</div>
+      <div id="prod-bars"></div>
+    </div>
+  </div>
+  <div class="det" id="det">
+    <div class="det-hdr">
+      <div class="det-nm" id="det-nm"></div>
+      <div class="det-x" onclick="closeDet()">×</div>
+    </div>
+    <div class="det-st" id="det-st"></div>
+    <div style="position:relative;height:120px;margin-top:8px"><canvas id="det-c" aria-label="Тренд добычи"></canvas></div>
+  </div>
+</div>
+
+<!-- ROUTES -->
+<div>
+  <div class="slbl" id="lbl-routes">Маршруты транспортировки нефти</div>
+  <div class="routes-wrap">
+    <div class="routes-hdr">
+      <div class="routes-sub" id="routes-note">Кликните на маршрут для деталей</div>
+      <div class="routes-tabs">
+        <button class="rt on" id="rtf-all" onclick="setRF('all')">Все</button>
+        <button class="rt" id="rtf-pipeline" onclick="setRF('pipeline')">Трубопроводы</button>
+        <button class="rt" id="rtf-tanker" onclick="setRF('tanker')">Танкеры</button>
+        <button class="rt" id="rtf-strait" onclick="setRF('strait')">Проливы</button>
+      </div>
+    </div>
+    <div class="routes-cards" id="routes-cards"></div>
+    <div class="route-map-wrap">
+      <canvas id="route-canvas" aria-label="Карта маршрутов транспортировки нефти"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- NEWS -->
+<div>
+  <div class="slbl" id="lbl-news">Новости нефтяного рынка</div>
+  <div class="news-wrap">
+    <div class="news-hdr">
+      <div class="news-ttl">Актуальные новости</div>
+      <button class="nref" onclick="renderNews()">↻ Обновить</button>
+    </div>
+    <div id="news-list"></div>
+  </div>
+</div>
+
+<!-- DERIVS -->
+<div>
+  <div class="slbl" id="lbl-deriv">Нефтепродукты и смежные рынки</div>
+  <div class="dgrid" id="dgrid"></div>
+</div>
+
+</div>
+<footer>Oil Market Dashboard · Демо-данные с симуляцией тиков · Добыча: EIA 2024 · Новости: редакционные · <span id="f-upd"></span></footer>
+
+<script>
+/* ──────────── i18n ──────────── */
+const TT={
+  ru:{bm:'Эталонные марки нефти',fut:'Фьючерсная кривая Brent',prod:'Добыча по странам',
+     spread:'Спред и индикаторы',eia:'Запасы нефти США — EIA (млн барр)',top10:'Топ-10 производителей',
+     deriv:'Нефтепродукты и смежные рынки',news:'Новости нефтяного рынка',routes:'Маршруты транспортировки нефти',
+     upd:'Обновлено',load:'Загрузка...',mbd:'млн б/д',rank:'Рейтинг',share:'Доля',plbl:'Добыча',opec:'ОПЕК',yes:'Да',no:'Нет',
+     tabs:{all:'Все',opec:'ОПЕК',nonopec:'Не-ОПЕК',americas:'Америка',asia:'Азия',europe:'Европа',africa:'Африка'},
+     rf:{all:'Все',pipeline:'Трубопроводы',tanker:'Танкеры',strait:'Проливы'},
+     click_route:'Кликните на маршрут для деталей'},
+  en:{bm:'Crude benchmarks',fut:'Brent futures curve',prod:'Production by country',
+     spread:'Spreads & indicators',eia:'US crude inventories — EIA (Mbbl)',top10:'Top 10 producers',
+     deriv:'Refined products & related',news:'Oil market news',routes:'Oil transportation routes',
+     upd:'Updated',load:'Loading...',mbd:'mbd',rank:'Rank',share:'Share',plbl:'Production',opec:'OPEC',yes:'Yes',no:'No',
+     tabs:{all:'All',opec:'OPEC',nonopec:'Non-OPEC',americas:'Americas',asia:'Asia',europe:'Europe',africa:'Africa'},
+     rf:{all:'All',pipeline:'Pipelines',tanker:'Tankers',strait:'Straits'},
+     click_route:'Click a route for details'},
+  zh:{bm:'基准原油价格',fut:'布伦特期货曲线',prod:'各国产量',
+     spread:'价差与指标',eia:'美国原油库存 EIA',top10:'十大产油国',
+     deriv:'精炼产品',news:'石油市场新闻',routes:'石油运输路线',
+     upd:'更新于',load:'加载...',mbd:'百万桶/天',rank:'排名',share:'份额',plbl:'产量',opec:'欧佩克',yes:'是',no:'否',
+     tabs:{all:'全部',opec:'欧佩克',nonopec:'非欧佩克',americas:'美洲',asia:'亚洲',europe:'欧洲',africa:'非洲'},
+     rf:{all:'全部',pipeline:'管道',tanker:'油轮',strait:'海峡'},
+     click_route:'点击路线查看详情'},
+  ar:{bm:'معايير أسعار النفط',fut:'عقود برنت الآجلة',prod:'الإنتاج حسب الدولة',
+     spread:'الفوارق والمؤشرات',eia:'مخزونات النفط الأمريكية',top10:'أكبر 10 منتجين',
+     deriv:'المنتجات المكررة',news:'أخبار سوق النفط',routes:'مسارات نقل النفط',
+     upd:'تحديث',load:'جارٍ...',mbd:'م ب/ي',rank:'المرتبة',share:'الحصة',plbl:'الإنتاج',opec:'أوبك',yes:'نعم',no:'لا',
+     tabs:{all:'الكل',opec:'أوبك',nonopec:'غير أوبك',americas:'أمريكا',asia:'آسيا',europe:'أوروبا',africa:'أفريقيا'},
+     rf:{all:'الكل',pipeline:'خطوط الأنابيب',tanker:'الناقلات',strait:'المضائق'},
+     click_route:'انقر على مسار للتفاصيل'}
+};
+let lang='ru',activeReg='all',routeFilter='all',selC=null,selRoute=null;
+let apiKey=null,isLive=false;
+let detChart=null,futChart=null;
+const t=k=>TT[lang][k]||TT.ru[k];
+
+/* ──────────── DATA ──────────── */
+const prices={
+  brent:{name:'Brent', code:'BRENT_CRUDE_USD', p:74.82,ch:0.43,pct:0.58,hist:[72.1,72.8,73.2,73.9,74.1,74.5,74.82]},
+  wti:  {name:'WTI',   code:'WTI_USD',         p:71.35,ch:0.31,pct:0.44,hist:[69.2,69.8,70.1,70.6,71.0,71.2,71.35]},
+  urals:{name:'Urals', code:null,              p:63.10,ch:-0.22,pct:-0.35,hist:[64.5,64.1,63.8,63.5,63.3,63.2,63.10]},
+  dubai:{name:'Dubai', code:'DUBAI_CRUDE_USD', p:73.95,ch:0.15,pct:0.20,hist:[71.8,72.3,72.7,73.1,73.5,73.7,73.95]},
+  wcs:  {name:'WCS',   code:null,              p:58.40,ch:-0.48,pct:-0.82,hist:[60.1,59.5,59.0,58.8,58.6,58.5,58.40]},
+  opec: {name:'ОПЕК basket',code:null,         p:72.61,ch:0.09,pct:0.12,hist:[70.5,71.0,71.4,71.8,72.1,72.4,72.61]},
+};
+const futures=[
+  {m:'Jul 25',p:74.82},{m:'Aug 25',p:74.41},{m:'Sep 25',p:74.05},{m:'Oct 25',p:73.72},
+  {m:'Nov 25',p:73.38},{m:'Dec 25',p:73.01},{m:'Jan 26',p:72.67},{m:'Feb 26',p:72.38}
+];
+const derivs=[
+  {n:'Gasoline',p:2.31,u:'$/gal',ch:0.01},{n:'Heating Oil',p:2.48,u:'$/gal',ch:-0.02},
+  {n:'Jet Fuel',p:2.85,u:'$/gal',ch:0.03},{n:'Nat.Gas',p:2.74,u:'$/MMBtu',ch:-0.05},
+  {n:'Coal',p:118.5,u:'$/t',ch:1.2},{n:'Carbon EUA',p:67.3,u:'€/t',ch:-0.8},
+];
+const eiaData=[
+  {ru:'Сырая нефть',en:'Crude oil',v:441.2,prev:443.1,max:550},
+  {ru:'Бензин',en:'Gasoline',v:229.8,prev:231.4,max:280},
+  {ru:'Дистилляты',en:'Distillates',v:113.5,prev:116.2,max:160},
+  {ru:'Стратег. резерв',en:'SPR',v:373.0,prev:373.0,max:620},
+];
+const countries=[
+  {id:840,ru:'США',en:'USA',p:13.2,sh:13.2,rk:1,reg:'americas',opec:0,tr:[12.5,12.8,13.0,13.1,13.2],f:'🇺🇸'},
+  {id:682,ru:'Саудовская Аравия',en:'Saudi Arabia',p:10.1,sh:10.1,rk:2,reg:'asia',opec:1,tr:[9.8,9.9,10.0,10.1,10.1],f:'🇸🇦'},
+  {id:643,ru:'Россия',en:'Russia',p:9.8,sh:9.8,rk:3,reg:'europe',opec:0,tr:[10.5,10.2,10.0,9.9,9.8],f:'🇷🇺'},
+  {id:124,ru:'Канада',en:'Canada',p:5.8,sh:5.8,rk:4,reg:'americas',opec:0,tr:[5.5,5.6,5.7,5.7,5.8],f:'🇨🇦'},
+  {id:156,ru:'Китай',en:'China',p:4.9,sh:4.9,rk:5,reg:'asia',opec:0,tr:[4.6,4.7,4.7,4.8,4.9],f:'🇨🇳'},
+  {id:368,ru:'Ирак',en:'Iraq',p:4.5,sh:4.5,rk:6,reg:'asia',opec:1,tr:[4.3,4.4,4.4,4.5,4.5],f:'🇮🇶'},
+  {id:784,ru:'ОАЭ',en:'UAE',p:4.2,sh:4.2,rk:7,reg:'asia',opec:1,tr:[4.0,4.1,4.1,4.2,4.2],f:'🇦🇪'},
+  {id:76,ru:'Бразилия',en:'Brazil',p:3.8,sh:3.8,rk:8,reg:'americas',opec:0,tr:[3.5,3.6,3.7,3.7,3.8],f:'🇧🇷'},
+  {id:364,ru:'Иран',en:'Iran',p:3.4,sh:3.4,rk:9,reg:'asia',opec:1,tr:[2.8,3.0,3.2,3.3,3.4],f:'🇮🇷'},
+  {id:8,ru:'Казахстан',en:'Kazakhstan',p:1.9,sh:1.9,rk:10,reg:'asia',opec:0,tr:[1.8,1.8,1.9,1.9,1.9],f:'🇰🇿'},
+  {id:578,ru:'Норвегия',en:'Norway',p:1.8,sh:1.8,rk:11,reg:'europe',opec:0,tr:[1.7,1.7,1.8,1.8,1.8],f:'🇳🇴'},
+  {id:634,ru:'Катар',en:'Qatar',p:1.8,sh:1.8,rk:12,reg:'asia',opec:1,tr:[1.8,1.8,1.8,1.8,1.8],f:'🇶🇦'},
+  {id:484,ru:'Мексика',en:'Mexico',p:1.7,sh:1.7,rk:13,reg:'americas',opec:0,tr:[1.7,1.7,1.7,1.7,1.7],f:'🇲🇽'},
+  {id:566,ru:'Нигерия',en:'Nigeria',p:1.5,sh:1.5,rk:14,reg:'africa',opec:1,tr:[1.3,1.3,1.4,1.4,1.5],f:'🇳🇬'},
+  {id:826,ru:'Великобритания',en:'UK',p:0.9,sh:0.9,rk:15,reg:'europe',opec:0,tr:[0.9,0.9,0.9,0.9,0.9],f:'🇬🇧'},
+  {id:12,ru:'Алжир',en:'Algeria',p:1.0,sh:1.0,rk:16,reg:'africa',opec:1,tr:[0.9,0.9,1.0,1.0,1.0],f:'🇩🇿'},
+  {id:862,ru:'Венесуэла',en:'Venezuela',p:0.9,sh:0.9,rk:17,reg:'americas',opec:1,tr:[0.7,0.7,0.8,0.8,0.9],f:'🇻🇪'},
+  {id:360,ru:'Индонезия',en:'Indonesia',p:0.6,sh:0.6,rk:18,reg:'asia',opec:0,tr:[0.6,0.7,0.7,0.6,0.6],f:'🇮🇩'},
+  {id:818,ru:'Египет',en:'Egypt',p:0.6,sh:0.6,rk:19,reg:'africa',opec:0,tr:[0.6,0.6,0.6,0.6,0.6],f:'🇪🇬'},
+  {id:276,ru:'Германия',en:'Germany',p:0.04,sh:0.04,rk:40,reg:'europe',opec:0,tr:[0.05,0.05,0.04,0.04,0.04],f:'🇩🇪'},
+];
+
+const routes=[
+  {id:'hormuz',type:'strait',
+   from_ru:'Персидский залив',from_en:'Persian Gulf',
+   n_ru:'Ормузский пролив',n_en:'Strait of Hormuz',
+   vol:21,tags:['strait','critical'],
+   note_ru:'Крупнейший нефтяной пролив мира (21 млн б/д). Закрытие поднимет цены Brent на $20+. Иран периодически угрожает блокадой.',
+   note_en:'World\'s #1 oil chokepoint (21 mbd). Closure could spike Brent by $20+. Iran periodically threatens blockade.',
+   // [x%, y%] positions on world canvas (percent of width/height)
+   pts:[[68,55],[70,58],[71,62]],col:'#f85149'},
+  {id:'malacca',type:'strait',
+   from_ru:'Индийский океан → Азия',from_en:'Indian Ocean → Asia',
+   n_ru:'Малаккский пролив',n_en:'Strait of Malacca',
+   vol:17,tags:['strait','asia'],
+   note_ru:'17 млн б/д — главный путь для нефти из Ближнего Востока в Китай, Японию, Южную Корею.',
+   note_en:'17 mbd — primary supply route from Middle East to China, Japan, South Korea.',
+   pts:[[78,62],[79,65],[80,67]],col:'#d29922'},
+  {id:'suez',type:'strait',
+   from_ru:'Красное море → Европа',from_en:'Red Sea → Europe',
+   n_ru:'Суэцкий канал',n_en:'Suez Canal',
+   vol:9.5,tags:['strait','europe'],
+   note_ru:'9.5 млн б/д. Атаки хуситов с 2023 г. вынудили танкеры идти в обход мыса Доброй Надежды (+10 дней).',
+   note_en:'9.5 mbd. Houthi attacks since 2023 forced tankers around Cape of Good Hope (+10 days).',
+   pts:[[60,48],[61,52],[61,56]],col:'#388bfd'},
+  {id:'druzhba',type:'pipeline',
+   from_ru:'Россия → Европа',from_en:'Russia → Europe',
+   n_ru:'Нефтепровод «Дружба»',n_en:'Druzhba Pipeline',
+   vol:1.2,tags:['pipeline','europe'],
+   note_ru:'Длиннейший нефтепровод мира (5500 км). Поставки в Европу резко сократились после 2022 г. Ранее — 1.2 млн б/д.',
+   note_en:'World\'s longest pipeline (5,500 km). European deliveries sharply cut post-2022. Previously 1.2 mbd.',
+   pts:[[53,35],[49,38],[46,38],[43,40],[40,40]],col:'#3fb950'},
+  {id:'keystone',type:'pipeline',
+   from_ru:'Канада → США',from_en:'Canada → USA',
+   n_ru:'Keystone Pipeline',n_en:'Keystone Pipeline',
+   vol:0.83,tags:['pipeline','americas'],
+   note_ru:'0.83 млн б/д из нефтеносных песков Альберты на НПЗ Иллинойса и Техаса.',
+   note_en:'0.83 mbd from Alberta oil sands to Illinois and Texas refineries.',
+   pts:[[20,30],[21,38],[21,46]],col:'#3fb950'},
+  {id:'espo',type:'pipeline',
+   from_ru:'Россия → Китай / Япония',from_en:'Russia → China / Japan',
+   n_ru:'ВСТО (ESPO)',n_en:'ESPO Pipeline',
+   vol:1.6,tags:['pipeline','asia'],
+   note_ru:'Восточная Сибирь — Тихий океан (ВСТО), 1.6 млн б/д. Ключевой маршрут поставок в Китай и Японию.',
+   note_en:'East Siberia–Pacific Ocean pipeline, 1.6 mbd. Key route to China and Japan amid sanctions.',
+   pts:[[63,30],[70,32],[75,38],[78,40]],col:'#388bfd'},
+  {id:'waf_asia',type:'tanker',
+   from_ru:'Зап. Африка → Азия',from_en:'W.Africa → Asia',
+   n_ru:'Западная Африка — Азия',n_en:'West Africa – Asia',
+   vol:3.5,tags:['tanker','africa'],
+   note_ru:'3.5 млн б/д. Растущий маршрут — Китай и Индия наращивают закупки нигерийской и ангольской нефти.',
+   note_en:'3.5 mbd. Growing route — China and India ramping up Nigerian and Angolan crude purchases.',
+   pts:[[44,58],[52,60],[60,58],[68,56]],col:'#d29922'},
+  {id:'gulf_india',type:'tanker',
+   from_ru:'Персидский залив → Индия',from_en:'Gulf → India',
+   n_ru:'Персидский залив — Индия',n_en:'Arabian Gulf – India',
+   vol:4.8,tags:['tanker','asia'],
+   note_ru:'4.8 млн б/д. Индия — второй по величине импортёр ближневосточной нефти, потребление растёт.',
+   note_en:'4.8 mbd. India is the 2nd largest importer of Middle Eastern crude, demand rising.',
+   pts:[[66,56],[67,60],[67,64]],col:'#388bfd'},
+];
+
+/* ──────────── MINI CANVAS CHART ──────────── */
+function drawLineChart(canvas, labels, data, color, minY, maxY){
+  const W=canvas.width=canvas.offsetWidth,H=canvas.height=canvas.offsetHeight;
+  if(!W||!H)return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pad={t:8,r:4,b:24,l:34};
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const range=maxY-minY||1;
+  const x=i=>pad.l+i/(data.length-1)*cw;
+  const y=v=>pad.t+ch-(v-minY)/range*ch;
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const yy=pad.t+ch/4*i;
+    ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();
+    ctx.fillStyle='#6e7681';ctx.font='9px system-ui';ctx.textAlign='right';
+    ctx.fillText((maxY-range/4*i).toFixed(0),pad.l-2,yy+3);
+  }
+  // area
+  ctx.beginPath();
+  data.forEach((v,i)=>i===0?ctx.moveTo(x(i),y(v)):ctx.lineTo(x(i),y(v)));
+  ctx.lineTo(x(data.length-1),pad.t+ch);ctx.lineTo(x(0),pad.t+ch);ctx.closePath();
+  ctx.fillStyle=color+'22';ctx.fill();
+  // line
+  ctx.beginPath();
+  data.forEach((v,i)=>i===0?ctx.moveTo(x(i),y(v)):ctx.lineTo(x(i),y(v)));
+  ctx.strokeStyle=color;ctx.lineWidth=1.8;ctx.lineJoin='round';ctx.stroke();
+  // dots
+  data.forEach((v,i)=>{
+    ctx.beginPath();ctx.arc(x(i),y(v),3,0,Math.PI*2);
+    ctx.fillStyle=color;ctx.fill();
+    ctx.strokeStyle='#0d1117';ctx.lineWidth=1;ctx.stroke();
+  });
+  // x labels
+  ctx.fillStyle='#6e7681';ctx.font='9px system-ui';ctx.textAlign='center';
+  labels.forEach((l,i)=>ctx.fillText(l,x(i),H-6));
+}
+
+function drawSparkline(canvas,hist,up){
+  const W=canvas.width=canvas.offsetWidth,H=28;
+  canvas.height=H;
+  if(!W)return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const mn=Math.min(...hist),mx=Math.max(...hist),range=mx-mn||0.01;
+  const x=i=>i/(hist.length-1)*W;
+  const y=v=>H-((v-mn)/range*(H-4)+2);
+  ctx.beginPath();
+  hist.forEach((v,i)=>i===0?ctx.moveTo(x(i),y(v)):ctx.lineTo(x(i),y(v)));
+  ctx.strokeStyle=up?'#3fb950':'#f85149';ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.stroke();
+}
+
+/* ──────────── WORLD MAP (Canvas) ──────────── */
+// Simplified country polygons as percentage coords [x%,y%]
+// Each entry: {id, path:[[x,y],...]}
+const worldPaths=[
+  // North America
+  {id:840,paths:[[[14,20],[28,20],[30,28],[26,35],[22,38],[18,36],[12,32],[10,26],[14,20]]]}, // USA
+  {id:124,paths:[[[14,12],[28,14],[28,20],[14,20],[12,16],[14,12]]]}, // Canada
+  {id:484,paths:[[[18,36],[26,36],[24,42],[20,44],[18,42],[18,36]]]}, // Mexico
+
+  // South America
+  {id:76,paths:[[[26,50],[34,46],[38,52],[36,62],[30,66],[24,62],[22,56],[26,50]]]}, // Brazil
+  {id:862,paths:[[[24,44],[30,44],[30,50],[26,50],[22,48],[24,44]]]}, // Venezuela
+  {id:218,paths:[[[22,48],[26,48],[26,52],[22,50],[22,48]]]}, // Ecuador
+
+  // Europe
+  {id:826,paths:[[[44,24],[48,22],[48,26],[46,28],[44,26],[44,24]]]}, // UK
+  {id:578,paths:[[[48,18],[52,16],[52,22],[50,24],[48,22],[48,18]]]}, // Norway
+  {id:276,paths:[[[50,24],[54,22],[54,26],[52,28],[50,26],[50,24]]]}, // Germany
+  {id:643,paths:[[[52,18],[80,16],[82,30],[74,36],[64,34],[56,32],[52,28],[52,18]]]}, // Russia (simplified)
+
+  // Africa
+  {id:12,paths:[[[48,40],[54,38],[56,44],[52,48],[48,46],[48,40]]]}, // Algeria
+  {id:818,paths:[[[56,44],[62,42],[64,48],[58,50],[56,48],[56,44]]]}, // Egypt
+  {id:566,paths:[[[46,56],[52,54],[52,62],[48,64],[44,60],[46,56]]]}, // Nigeria
+  {id:288,paths:[[[42,56],[46,56],[46,60],[42,60],[42,56]]]}, // Ghana
+
+  // Middle East
+  {id:682,paths:[[[60,46],[68,44],[68,54],[62,56],[60,52],[60,46]]]}, // Saudi Arabia
+  {id:784,paths:[[[66,50],[70,50],[70,54],[66,54],[66,50]]]}, // UAE
+  {id:368,paths:[[[60,42],[66,40],[68,44],[64,46],[60,46],[60,42]]]}, // Iraq
+  {id:364,paths:[[[66,38],[74,38],[76,44],[72,48],[66,46],[64,42],[66,38]]]}, // Iran
+  {id:634,paths:[[[66,50],[68,48],[70,50],[68,52],[66,50]]]}, // Qatar
+
+  // Asia
+  {id:8,paths:[[[70,36],[78,34],[80,40],[74,42],[70,40],[70,36]]]}, // Kazakhstan
+  {id:156,paths:[[[76,28],[90,26],[92,38],[84,44],[76,44],[72,38],[76,28]]]}, // China
+  {id:360,paths:[[[80,58],[86,56],[86,62],[82,64],[80,62],[80,58]]]}, // Indonesia
+];
+
+const byId={};
+countries.forEach(c=>byId[c.id]=c);
+
+let mapHitRegions=[];
+
+function prodColor(p){
+  if(p>10)return'#3fb950';if(p>5)return'#388bfd';if(p>2)return'#58a6ff';
+  if(p>1)return'#79c0ff';if(p>0.3)return'#a5c9f0';return null;
+}
+
+function filteredC(){
+  return countries.filter(c=>{
+    if(activeReg==='all')return true;
+    if(activeReg==='opec')return c.opec;
+    if(activeReg==='nonopec')return!c.opec;
+    return c.reg===activeReg;
+  });
+}
+
+function drawWorldMap(){
+  const canvas=document.getElementById('world-svg');
+  const W=canvas.offsetWidth;const H=400;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  // ocean
+  ctx.fillStyle='#1a2333';ctx.fillRect(0,0,W,H);
+  mapHitRegions=[];
+  const activeIds=new Set(filteredC().map(c=>c.id));
+
+  worldPaths.forEach(wp=>{
+    const c=byId[wp.id];
+    const isActive=activeIds.has(wp.id);
+    const col=isActive&&c?prodColor(c.p):null;
+    wp.paths.forEach(poly=>{
+      ctx.beginPath();
+      poly.forEach(([px,py],i)=>{
+        const sx=px/100*W,sy=py/100*H;
+        i===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+      });
+      ctx.closePath();
+      ctx.fillStyle=col||'#1c2128';
+      ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;ctx.stroke();
+      if(isActive&&c){
+        // store hit region (bounding box)
+        const xs=poly.map(p=>p[0]/100*W),ys=poly.map(p=>p[1]/100*H);
+        mapHitRegions.push({id:wp.id,mx:Math.min(...xs),Mx:Math.max(...xs),my:Math.min(...ys),My:Math.max(...ys),poly,W,H});
+      }
+    });
+  });
+  // legend
+  const stops=[{c:'#3fb950',l:'>10'},{c:'#388bfd',l:'5-10'},{c:'#58a6ff',l:'2-5'},{c:'#79c0ff',l:'1-2'},{c:'#a5c9f0',l:'<1'}];
+  stops.forEach((s,i)=>{
+    ctx.fillStyle=s.c;ctx.fillRect(10+i*56,H-22,12,12);
+    ctx.fillStyle='#6e7681';ctx.font='10px system-ui';ctx.textAlign='left';
+    ctx.fillText(s.l+' mbd',24+i*56,H-12);
+  });
+}
+
+function ptInPoly(px,py,poly,W,H){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i][0]/100*W,yi=poly[i][1]/100*H;
+    const xj=poly[j][0]/100*W,yj=poly[j][1]/100*H;
+    if((yi>py)!==(yj>py)&&px<(xj-xi)*(py-yi)/(yj-yi)+xi)inside=!inside;
+  }
+  return inside;
+}
+
+function mapHitTest(mx,my){
+  // Expand bbox test then do poly test
+  for(const r of mapHitRegions){
+    if(mx>=r.mx-6&&mx<=r.Mx+6&&my>=r.my-6&&my<=r.My+6){
+      if(ptInPoly(mx,my,r.poly,r.W,r.H))return byId[r.id];
+    }
+  }
+  return null;
+}
+
+// Canvas mouse events
+function setupMapEvents(){
+  const canvas=document.getElementById('world-svg');
+  const tt=document.getElementById('mtt');
+  canvas.style.cursor='default';
+  canvas.addEventListener('mousemove',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    const c=mapHitTest(mx,my);
+    if(c){
+      canvas.style.cursor='pointer';
+      tt.style.display='block';
+      tt.style.left=(mx+14)+'px';tt.style.top=(my-10)+'px';
+      tt.innerHTML=`<div class="tt-name">${c.f} ${cname(c)}</div>
+        <div class="tt-row">${t('plbl')}: <b>${c.p} ${t('mbd')}</b></div>
+        <div class="tt-row">${t('rank')}: <b>#${c.rk}</b></div>
+        <div class="tt-row">${t('share')}: <b>${c.sh}%</b></div>
+        <div class="tt-row">${t('opec')}: <b>${c.opec?t('yes'):t('no')}</b></div>`;
+    } else {
+      canvas.style.cursor='default';
+      tt.style.display='none';
+    }
+  });
+  canvas.addEventListener('mouseleave',()=>{tt.style.display='none';});
+  canvas.addEventListener('click',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const c=mapHitTest(e.clientX-rect.left,e.clientY-rect.top);
+    if(c)showDetail(c);
+  });
+}
+
+/* ──────────── ROUTE MAP ──────────── */
+function drawRouteMap(){
+  const canvas=document.getElementById('route-canvas');
+  const W=canvas.offsetWidth,H=240;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  // simple ocean background
+  ctx.fillStyle='#1a2333';ctx.fillRect(0,0,W,H);
+  // continents (very simplified fill areas)
+  ctx.fillStyle='#1c2128';
+  const continents=[
+    // N.America [[x%,y%],...]
+    [[10,10],[30,10],[32,35],[26,45],[18,48],[10,40],[8,22],[10,10]],
+    // S.America
+    [[22,46],[32,44],[38,50],[36,80],[28,82],[20,70],[20,54],[22,46]],
+    // Europe
+    [[44,10],[56,10],[56,36],[48,38],[44,30],[44,10]],
+    // Africa
+    [[44,38],[62,36],[64,74],[52,80],[40,72],[38,52],[44,38]],
+    // Asia/Russia
+    [[56,8],[96,8],[98,48],[86,50],[76,60],[70,50],[60,44],[54,36],[56,8]],
+    // Australia
+    [[76,66],[90,64],[92,78],[80,80],[74,76],[76,66]],
+  ];
+  continents.forEach(pts=>{
+    ctx.beginPath();
+    pts.forEach(([px,py],i)=>i===0?ctx.moveTo(px/100*W,py/100*H):ctx.lineTo(px/100*W,py/100*H));
+    ctx.closePath();ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;ctx.stroke();
+  });
+
+  const filteredRoutes=routeFilter==='all'?routes:routes.filter(r=>r.type===routeFilter);
+  filteredRoutes.forEach(r=>{
+    const isSel=selRoute===r.id;
+    const pts=r.pts.map(([px,py])=>[px/100*W,py/100*H]);
+    ctx.beginPath();
+    pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+    if(isSel){
+      ctx.strokeStyle=r.col;ctx.lineWidth=5;ctx.globalAlpha=0.2;ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+    ctx.beginPath();
+    pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+    if(r.type==='tanker'){ctx.setLineDash([6,4]);}else{ctx.setLineDash([]);}
+    ctx.strokeStyle=r.col;ctx.lineWidth=isSel?2.5:1.5;ctx.globalAlpha=isSel?1:0.6;ctx.stroke();
+    ctx.setLineDash([]);ctx.globalAlpha=1;
+    // endpoints
+    pts.forEach(([x,y])=>{
+      ctx.beginPath();ctx.arc(x,y,isSel?5:3,0,Math.PI*2);
+      ctx.fillStyle=r.col;ctx.fill();
+      ctx.strokeStyle='#1a2333';ctx.lineWidth=1;ctx.stroke();
+    });
+    // label if selected
+    if(isSel&&pts.length>0){
+      const mid=pts[Math.floor(pts.length/2)];
+      const lbl=(lang==='ru'?r.n_ru:r.n_en)+' · '+r.vol+' mbd';
+      ctx.font='bold 11px system-ui';
+      const tw=ctx.measureText(lbl).width;
+      ctx.fillStyle='rgba(13,17,23,0.85)';ctx.fillRect(mid[0]-tw/2-4,mid[1]-17,tw+8,16);
+      ctx.fillStyle=r.col;ctx.textAlign='center';ctx.fillText(lbl,mid[0],mid[1]-5);
+    }
+  });
+  // legend
+  const ltypes=[{col:'#388bfd',lbl:lang==='ru'?'Трубопровод':'Pipeline',dash:false},{col:'#d29922',lbl:lang==='ru'?'Танкер':'Tanker',dash:true},{col:'#f85149',lbl:lang==='ru'?'Пролив':'Strait',dash:false}];
+  ctx.textAlign='left';ctx.font='10px system-ui';
+  ltypes.forEach((lt,i)=>{
+    ctx.setLineDash(lt.dash?[5,4]:[]);
+    ctx.strokeStyle=lt.col;ctx.lineWidth=2;ctx.globalAlpha=1;
+    ctx.beginPath();ctx.moveTo(10+i*90,H-14);ctx.lineTo(26+i*90,H-14);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#6e7681';ctx.fillText(lt.lbl,30+i*90,H-10);
+  });
+}
+
+/* ──────────── RENDER PRICES ──────────── */
+function cname(c){return lang==='ru'?c.ru:c.en}
+
+function renderPrices(){
+  const g=document.getElementById('pgrid');
+  g.innerHTML=Object.entries(prices).map(([k,p])=>`
+    <div class="pc${isLive&&p.code?' live-glow':''}">
+      <div class="pc-live-dot" style="${isLive&&p.code?'display:block':'display:none'}"></div>
+      <div class="pcl">${p.name}${!p.code?'<small style="color:var(--tx3);font-size:9px;margin-left:4px">est.</small>':''}</div>
+      <div class="pcv">$${p.p.toFixed(2)}</div>
+      <div class="pcu">USD / barrel</div>
+      <div class="pcc ${p.ch>=0?'up':'dn'}">${p.ch>=0?'▲':'▼'} ${Math.abs(p.ch).toFixed(2)} (${p.pct>0?'+':''}${p.pct.toFixed(2)}%)</div>
+      <div class="spark-wrap"><canvas id="sp-${k}"></canvas></div>
+    </div>`).join('');
+  Object.entries(prices).forEach(([k,p])=>{
+    const c=document.getElementById('sp-'+k);
+    if(c)setTimeout(()=>drawSparkline(c,p.hist,p.ch>=0),10);
+  });
+}
+
+function renderSpread(){
+  const bw=(prices.brent.p-prices.wti.p).toFixed(2);
+  const bu=(prices.brent.p-prices.urals.p).toFixed(2);
+  const crack=((prices.wti.p*0.42+prices.wti.p*0.32)-prices.wti.p).toFixed(2);
+  document.getElementById('bw-s').innerHTML=`<span class="badge bb">+$${bw}</span>`;
+  document.getElementById('bu-s').innerHTML=`<span class="badge ba">+$${bu}</span>`;
+  document.getElementById('crack-s').innerHTML=`<span class="badge bg2c">$${crack}</span>`;
+}
+
+function renderEIA(){
+  document.getElementById('eia-bars').innerHTML=eiaData.map(d=>{
+    const pct=Math.round(d.v/d.max*100);
+    const diff=+(d.v-d.prev).toFixed(1);
+    const col=diff<0?'#3fb950':'#f85149';
+    return`<div class="eia-row">
+      <div class="eia-lbl">${lang==='ru'?d.ru:d.en}</div>
+      <div class="eia-bw"><div class="eia-b" style="width:${pct}%;background:${col}"></div></div>
+      <div class="eia-val">${d.v.toFixed(0)}<span class="eia-chg" style="color:${col}">${diff>0?'+':''}${diff}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderFutures(){
+  document.getElementById('fgrid').innerHTML=futures.map((f,i)=>`
+    <div class="fc${i===0?' spot':''}">
+      <div class="fm">${f.m}${i===0?' · spot':''}</div>
+      <div class="fv">$${f.p.toFixed(2)}</div>
+      <div class="fd">${i>0?(f.p-futures[0].p).toFixed(2):'текущий'}</div>
+    </div>`).join('');
+  const fw=document.getElementById('fut-c');
+  drawLineChart(fw,futures.map(f=>f.m),futures.map(f=>f.p),'#388bfd',71,76);
+}
+
+function renderTabs(){
+  const tabs=['all','opec','nonopec','americas','asia','europe','africa'];
+  document.getElementById('rtabs').innerHTML=tabs.map(r=>
+    `<button class="rt${activeReg===r?' on':''}" onclick="setReg('${r}')">${TT[lang].tabs[r]}</button>`
+  ).join('');
+}
+function setReg(r){activeReg=r;renderTabs();drawWorldMap();renderProdBars();}
+
+function renderProdBars(){
+  const fc=filteredC().sort((a,b)=>b.p-a.p).slice(0,10);
+  const mx=fc[0]?.p||13;
+  document.getElementById('prod-bars').innerHTML=fc.map(c=>`
+    <div class="prod-row">
+      <div class="pflag">${c.f}</div>
+      <div class="pname">${cname(c)}</div>
+      <div class="pbw"><div class="pb" style="width:${Math.round(c.p/mx*100)}%;background:${prodColor(c.p)||'#388bfd'}"></div></div>
+      <div class="pv">${c.p.toFixed(1)}</div>
+    </div>`).join('');
+}
+
+function showDetail(c){
+  selC=c;
+  const det=document.getElementById('det');
+  det.style.display='block';det.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('det-nm').textContent=c.f+' '+cname(c);
+  document.getElementById('det-st').innerHTML=`
+    <div class="ds"><div class="dsl">${t('plbl')}</div><div class="dsv">${c.p} ${t('mbd')}</div></div>
+    <div class="ds"><div class="dsl">${t('share')}</div><div class="dsv">${c.sh}%</div></div>
+    <div class="ds"><div class="dsl">${t('rank')}</div><div class="dsv">#${c.rk}</div></div>`;
+  const dc=document.getElementById('det-c');
+  drawLineChart(dc,['2021','2022','2023','2024','2025'],c.tr,'#388bfd',
+    Math.min(...c.tr)*0.95,Math.max(...c.tr)*1.05);
+}
+function closeDet(){document.getElementById('det').style.display='none';selC=null;}
+
+/* ──────────── ROUTES ──────────── */
+function setRF(f){
+  routeFilter=f;
+  ['all','pipeline','tanker','strait'].forEach(id=>{
+    const el=document.getElementById('rtf-'+id);
+    if(el)el.classList.toggle('on',id===f);
+  });
+  renderRoutes();
+}
+
+function renderRoutes(){
+  const fr=routeFilter==='all'?routes:routes.filter(r=>r.type===routeFilter);
+  document.getElementById('routes-cards').innerHTML=fr.map(r=>`
+    <div class="rc${selRoute===r.id?' sel':''}" onclick="pickRoute('${r.id}')">
+      <div class="rc-from">${lang==='ru'?r.from_ru:r.from_en}</div>
+      <div class="rc-name">${lang==='ru'?r.n_ru:r.n_en}</div>
+      <div class="rc-vol">${r.vol}</div>
+      <div class="rc-unit">млн барр/день</div>
+      <div class="rc-tags">${r.tags.map(tg=>`<span class="tag ${tg==='strait'?'tag-s':tg==='pipeline'?'tag-p':'tag-t'}">${tg}</span>`).join('')}</div>
+    </div>`).join('');
+  drawRouteMap();
+}
+function pickRoute(id){
+  selRoute=selRoute===id?null:id;
+  const r=routes.find(x=>x.id===id);
+  document.getElementById('routes-note').textContent=r?(lang==='ru'?r.note_ru:r.note_en):t('click_route');
+  renderRoutes();
+}
+
+/* ──────────── NEWS ──────────── */
+const newsData={
+  ru:[
+    {ico:'🛢️',head:'ОПЕК+ сохраняет квоты на добычу до конца квартала',body:'Министерский комитет ОПЕК+ проголосовал за сохранение сокращения добычи на уровне 3.66 млн б/д. Brent удержался выше $73 после объявления.',src:'Reuters',time:'1 час назад',imp:'bull'},
+    {ico:'📊',head:'Запасы нефти в США упали на 1.9 млн баррелей — выше прогноза',body:'EIA зафиксировало снижение коммерческих запасов. Аналитики ожидали сокращения лишь на 0.5 млн барр. Бензиновые запасы также снизились.',src:'EIA',time:'3 часа назад',imp:'bull'},
+    {ico:'🚢',head:'Хуситы атаковали танкер в Красном море — страховки растут',body:'Очередной инцидент в Баб-эль-Мандебском проливе. Крупные перевозчики продолжают маршруты через мыс Доброй Надежды. Страховые ставки выросли на 12%.',src:'Bloomberg',time:'5 часов назад',imp:'bull'},
+    {ico:'🇺🇸',head:'Добыча нефти в США достигла рекорда 13.2 млн б/д',body:'Американские сланцевые производители наращивают добычу вопреки опасениям. Число буровых установок выросло на 8 единиц за неделю по данным Baker Hughes.',src:'WSJ',time:'7 часов назад',imp:'bear'},
+    {ico:'🇨🇳',head:'Китай сокращает импорт нефти — слабый спрос в промышленности',body:'Импорт нефти КНР в мае снизился на 5.7% г/г до 10.8 млн б/д. Аналитики связывают с замедлением производства и стратегическим снижением запасов.',src:'Bloomberg',time:'12 часов назад',imp:'bear'},
+    {ico:'💹',head:'Goldman Sachs повысил прогноз Brent до $85 к концу года',body:'Банк пересмотрел цель вверх с $78 до $85/барр. Причины: сезонный спрос, дефицит предложения в Q3 и сокращение добычи ОПЕК+.',src:'Reuters',time:'1 день назад',imp:'bull'},
+  ],
+  en:[
+    {ico:'🛢️',head:'OPEC+ holds production cuts through quarter end',body:'The ministerial committee voted to keep 3.66 mbd cuts in place. Brent held above $73 after the announcement.',src:'Reuters',time:'1 hour ago',imp:'bull'},
+    {ico:'📊',head:'US crude inventories fell 1.9 mbd, beating forecasts',body:'EIA data showed commercial stocks declined more than expected. Analysts had forecast only a 0.5 mbd draw. Gasoline stocks also fell.',src:'EIA',time:'3 hours ago',imp:'bull'},
+    {ico:'🚢',head:'Houthis strike tanker in Red Sea, insurance premiums jump',body:'Another incident in Bab-el-Mandeb strait. Major carriers continue rerouting via Cape of Good Hope. War risk premiums rose 12%.',src:'Bloomberg',time:'5 hours ago',imp:'bull'},
+    {ico:'🇺🇸',head:'US output hits record 13.2 mbd',body:'American shale producers keep ramping up despite concerns. Baker Hughes rig count rose by 8 units over the week.',src:'WSJ',time:'7 hours ago',imp:'bear'},
+    {ico:'🇨🇳',head:'China cuts oil imports as industrial demand weakens',body:'China\'s crude imports in May fell 5.7% YoY to 10.8 mbd. Analysts link it to slower manufacturing and strategic stock drawdowns.',src:'Bloomberg',time:'12 hours ago',imp:'bear'},
+    {ico:'💹',head:'Goldman Sachs raises Brent forecast to $85 by year-end',body:'The bank revised target up from $78 to $85/bbl on seasonal demand, Q3 supply deficit and OPEC+ discipline.',src:'Reuters',time:'1 day ago',imp:'bull'},
+  ]
+};
+function renderNews(){
+  const data=newsData[lang]||newsData.en;
+  document.getElementById('news-list').innerHTML=data.map(n=>`
+    <div class="ni">
+      <div class="ni-ico">${n.ico}</div>
+      <div style="flex:1">
+        <div class="ni-meta">
+          <span class="ni-src">${n.src}</span>
+          <span class="ni-time">${n.time}</span>
+          <span class="ni-imp ${n.imp==='bull'?'i-bull':n.imp==='bear'?'i-bear':'i-neu'}">${n.imp==='bull'?'▲ Бычий':n.imp==='bear'?'▼ Медвежий':'◆ Нейтральный'}</span>
+        </div>
+        <div class="ni-head">${n.head}</div>
+        <div class="ni-body">${n.body}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderDerivs(){
+  document.getElementById('dgrid').innerHTML=derivs.map(d=>`
+    <div class="fc">
+      <div class="fm">${d.n}</div>
+      <div class="fv" style="font-size:15px">${d.p.toFixed(2)}</div>
+      <div class="fd">${d.u}</div>
+      <div class="pcc ${d.ch>=0?'up':'dn'}" style="font-size:11px;margin-top:4px">${d.ch>=0?'▲':'▼'} ${Math.abs(d.ch).toFixed(2)}</div>
+    </div>`).join('');
+}
+
+/* ──────────── API ──────────── */
+function connectApi(){
+  const k=document.getElementById('api-in').value.trim();
+  if(!k){showMsg('Введите ключ','err');return;}
+  showMsg('Проверяем ключ...','');
+  fetch('https://api.oilpriceapi.com/v1/prices/latest?by_code=BRENT_CRUDE_USD',{
+    headers:{'Authorization':'Token '+k,'Content-Type':'application/json'}
+  })
+  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(d=>{
+    if(d.status!=='success')throw new Error(d.message||'Ошибка');
+    const realP=parseFloat(d.data.price);
+    const prev=prices.brent.p;
+    prices.brent.ch=+(realP-prev).toFixed(2);
+    prices.brent.pct=+((realP-prev)/prev*100).toFixed(2);
+    prices.brent.hist=[...prices.brent.hist.slice(1),realP];
+    prices.brent.p=realP;
+    apiKey=k;isLive=true;
+    localStorage.setItem('oil_key',k);
+    document.getElementById('api-box').style.display='none';
+    document.getElementById('live-chip').style.display='inline';
+    document.querySelectorAll('.pc-live-dot').forEach(el=>el.style.display='block');
+    showMsg('✓ Подключено! Brent: $'+realP.toFixed(2),'ok');
+    fetchLive();renderPrices();
+  })
+  .catch(e=>showMsg('✗ '+e.message+'. Проверьте ключ.','err'));
+}
+function showMsg(txt,type){
+  const el=document.getElementById('api-msg');
+  el.className='api-msg'+(type==='ok'?' api-ok':type==='err'?' api-err':'');
+  el.textContent=txt;el.style.display='block';
+}
+function skipApi(){document.getElementById('api-box').style.display='none';renderAll();}
+
+async function fetchLive(){
+  if(!apiKey)return;
+  for(const[k,code]of[['brent','BRENT_CRUDE_USD'],['wti','WTI_USD'],['dubai','DUBAI_CRUDE_USD']]){
+    try{
+      const r=await fetch('https://api.oilpriceapi.com/v1/prices/latest?by_code='+code,
+        {headers:{'Authorization':'Token '+apiKey}});
+      if(!r.ok)continue;
+      const d=await r.json();
+      if(d.status!=='success')continue;
+      const np=parseFloat(d.data.price);
+      const pr=prices[k];
+      pr.ch=+(np-pr.p).toFixed(2);pr.pct=+((np-pr.p)/pr.p*100).toFixed(2);
+      pr.hist=[...pr.hist.slice(1),np];pr.p=np;
+    }catch(e){}
+  }
+}
+
+/* ──────────── SIM ──────────── */
+function simTick(){
+  Object.values(prices).forEach(p=>{
+    const d=(Math.random()-.485)*.13;
+    p.p=+Math.max(1,p.p+d).toFixed(2);
+    p.ch=+(p.ch+d*.3).toFixed(2);
+    p.pct=+((p.ch/p.p)*100).toFixed(2);
+    p.hist=[...p.hist.slice(1),p.p];
+  });
+}
+
+/* ──────────── LABELS ──────────── */
+function setLabels(){
+  const map={bm:'bm',fut:'fut',prod:'prod',deriv:'deriv',news:'news',routes:'routes'};
+  Object.entries(map).forEach(([id,k])=>{const el=document.getElementById('lbl-'+id);if(el)el.textContent=t(k);});
+  const s1=document.querySelector('#lbl-spread');if(s1)s1.textContent=t('spread');
+  const s2=document.querySelector('#lbl-eia');if(s2)s2.textContent=t('eia');
+  const s3=document.querySelector('#lbl-top10');if(s3)s3.textContent=t('top10');
+  ['all','pipeline','tanker','strait'].forEach(f=>{
+    const el=document.getElementById('rtf-'+f);
+    if(el)el.textContent=TT[lang].rf[f];
+  });
+}
+
+function setL(l){
+  lang=l;
+  document.querySelectorAll('.lb').forEach(b=>b.classList.toggle('on',b.onclick.toString().includes("'"+l+"'")));
+  renderAll();
+}
+
+async function loadAll(){
+  document.getElementById('spin').style.display='inline-block';
+  document.getElementById('upd-txt').textContent=t('load');
+  if(isLive&&apiKey)await fetchLive();
+  else{await new Promise(r=>setTimeout(r,200));simTick();}
+  const now=new Date();
+  const ts=`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  document.getElementById('upd-txt').textContent=`${t('upd')} ${ts}`;
+  document.getElementById('f-upd').textContent=`Обновлено: ${ts}`;
+  document.getElementById('spin').style.display='none';
+  renderPrices();renderSpread();renderEIA();
+}
+
+function renderAll(){
+  setLabels();
+  renderPrices();renderSpread();renderEIA();renderFutures();
+  renderTabs();drawWorldMap();renderProdBars();
+  renderRoutes();renderNews();renderDerivs();
+  if(selC)showDetail(selC);
+}
+
+/* ──────────── INIT ──────────── */
+// Always hide API box immediately — show dashboard right away
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('api-box').style.display='none';
+});
+
+const savedKey=localStorage.getItem('oil_key');
+if(savedKey){
+  apiKey=savedKey;isLive=true;
+  document.getElementById('live-chip').style.display='inline';
+}
+
+window.addEventListener('load',()=>{
+  // Double-ensure api box hidden
+  document.getElementById('api-box').style.display='none';
+
+  // First render immediately (text/bars work without size)
+  setLabels();
+  renderPrices();renderSpread();renderEIA();renderFutures();
+  renderTabs();renderProdBars();renderRoutes();renderNews();renderDerivs();
+
+  // Canvas needs real pixel dimensions — defer by 2 frames
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      drawWorldMap();
+      drawRouteMap();
+      setupMapEvents();
+      // Re-render futures chart now that container has size
+      renderFutures();
+      loadAll();
+    });
+  });
+
+  // Settings button in header to re-enter API key
+  const settingsBtn=document.createElement('button');
+  settingsBtn.className='rbtn';
+  settingsBtn.textContent='⚙ API';
+  settingsBtn.title='Настройки API ключа';
+  settingsBtn.onclick=()=>{
+    const box=document.getElementById('api-box');
+    box.style.display=box.style.display==='none'?'flex':'none';
+  };
+  document.querySelector('.hdr-r').prepend(settingsBtn);
+
+  let resizeTimer;
+  window.addEventListener('resize',()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>{
+      drawWorldMap();drawRouteMap();renderFutures();if(selC)showDetail(selC);
+    },150);
+  });
+});
+
+setInterval(loadAll,30000);
+setInterval(()=>{if(!isLive){simTick();renderPrices();renderSpread();}},8000);
+</script>
+</body>
+</html>
